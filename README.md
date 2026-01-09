@@ -1,226 +1,54 @@
-# Mini SaaS POS Backend System
+# Mini SaaS POS System - Quick Installation
 
-একটি **উন্নত, মাল্টি-টেন্যান্ট পয়েন্ট অফ সেল (POS) এবং ইনভেন্টরি ম্যানেজমেন্ট সিস্টেম** যা Laravel 11 এবং MySQL দিয়ে তৈরি। সিস্টেমটি সম্পূর্ণভাবে API-ফার্স্ট এবং প্রোডাকশন-রেডি।
+## Prerequisites
 
-## 🚀 বৈশিষ্ট্যসমূহ
+Before installing, make sure you have the following installed:
 
-### মূল বৈশিষ্ট্য
-- ✅ **মাল্টি-টেন্যান্ট আর্কিটেকচার** - প্রতিটি ব্যবসা সম্পূর্ণ আলাদা ডেটা আইসোলেশন সহ
-- ✅ **API-ফার্স্ট ডিজাইন** - সম্পূর্ণ RESTful API সাথে Sanctum Authentication
-- ✅ **ভূমিকা-ভিত্তিক অ্যাক্সেস নিয়ন্ত্রণ** - Owner এবং Staff ভূমিকা
-- ✅ **উন্নত ইনভেন্টরি ম্যানেজমেন্ট** - স্বয়ংক্রিয় স্টক ট্র্যাকিং এবং কম স্টক সতর্কতা
-- ✅ **অর্ডার ম্যানেজমেন্ট** - ডাটাবেস ট্রানজ্যাকশন সহ নিরাপদ অর্ডার প্রসেসিং
-- ✅ **রিপোর্টিং মডিউল** - দৈনিক বিক্রয় সারাংশ, শীর্ষ পণ্য, কম স্টক রিপোর্ট
-- ✅ **অপ্টিমাইজড কোয়েরি** - N+1 সমস্যা সমাধান এবং ডেটাবেস ইন্ডেক্সিং
-- ✅ **সম্পূর্ণ ভ্যালিডেশন** - Form Request এবং নিয়মিত ত্রুটি পরিচালনা
+- **PHP** 8.0 or higher
+- **Composer** (PHP Package Manager)
+- **MySQL** 5.7 or higher
+- **Node.js** (Optional, for frontend)
+- **Git** (Optional, for cloning)
 
 ---
 
-## 📋 প্রযুক্তি স্ট্যাক
+## Installation Steps
 
-| প্রযুক্তি | সংস্করণ |
-|---------|---------|
-| PHP | 8.2+ |
-| Laravel | 11.x |
-| MySQL | 5.7+ |
-| Sanctum | 4.x (API Authentication) |
+### Step 1: Clone or Download Project
+
+**Using Git:**
+```bash
+git clone https://github.com/yourusername/mini-saas-pos.git
+cd mini-saas-pos
+```
+
+**Or download and extract ZIP file**
 
 ---
 
-## 🏗️ সিস্টেম আর্কিটেকচার
-
-### মাল্টি-টেন্যান্সি কৌশল
-
-এই সিস্টেম **ডাটাবেস-লেভেল টেন্যান্ট আইসোলেশন** ব্যবহার করে:
-
-```
-┌─────────────────────────────────────────────────┐
-│         API Request (with X-Tenant-ID)         │
-└────────┬────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────┐
-│  EnsureTenantIsSet Middleware                   │
-│  - Tenant ID থেকে Header/Auth User             │
-│  - Request attributes-এ store করা             │
-└────────┬────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────┐
-│  TenantScope (Global Scope on Models)          │
-│  - সমস্ত queries স্বয়ংক্রিয়ভাবে filter     │
-│  - WHERE tenant_id = X যোগ হয়                 │
-└────────┬────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────┐
-│  Database Layer (Isolated Tables)               │
-│  - Products (tenant_id indexed)                │
-│  - Orders (tenant_id indexed)                  │
-│  - Customers (tenant_id indexed)               │
-│  - OrderItems (via orders)                     │
-└─────────────────────────────────────────────────┘
-```
-
-### ডেটাবেস স্কিমা
-
-**Tenants টেবিল**
-```
-tenants
-├── id (PK)
-├── name (ব্যবসার নাম)
-├── slug (অনন্য স্লাগ)
-├── email
-├── created_at / updated_at
-```
-
-**Users টেবিল** (মূল Users টেবিলে সম্প্রসারণ)
-```
-users
-├── id (PK)
-├── tenant_id (FK → tenants)
-├── name
-├── email
-├── password
-├── role (owner | staff)
-├── created_at / updated_at
-```
-
-**Products টেবিল**
-```
-products
-├── id (PK)
-├── tenant_id (FK → tenants) [Index]
-├── name
-├── sku (unique per tenant)
-├── price (decimal)
-├── stock_quantity [Index]
-├── low_stock_threshold
-├── description
-├── created_at / updated_at
-```
-
-**Customers টেবিল**
-```
-customers
-├── id (PK)
-├── tenant_id (FK → tenants) [Index]
-├── name
-├── email
-├── phone
-├── address
-├── created_at / updated_at
-```
-
-**Orders টেবিল**
-```
-orders
-├── id (PK)
-├── tenant_id (FK → tenants) [Index]
-├── customer_id (FK → customers)
-├── order_number (unique)
-├── total_amount (decimal)
-├── status (pending | paid | cancelled)
-├── created_at / updated_at [Index]
-```
-
-**OrderItems টেবিল**
-```
-order_items
-├── id (PK)
-├── order_id (FK → orders)
-├── product_id (FK → products)
-├── quantity
-├── unit_price
-├── subtotal
-├── created_at / updated_at
-```
-
----
-
-## 🔐 নিরাপত্তা এবং অনুমোদন
-
-### Authentication Flow
+### Step 2: Install Dependencies
 
 ```bash
-# 1. রেজিস্ট্রেশন - নতুন টেন্যান্ট তৈরি করুন
-POST /api/auth/register
-{
-    "tenant_name": "ABC Store",
-    "tenant_slug": "abc-store",
-    "tenant_email": "business@example.com",
-    "name": "John Owner",
-    "email": "john@example.com",
-    "password": "password123",
-    "password_confirmation": "password123"
-}
-
-# প্রতিক্রিয়া:
-{
-    "message": "Registration successful",
-    "user": { ... },
-    "token": "1|abc123xyz..."  # Sanctum Token
-}
-
-# 2. লগইন
-POST /api/auth/login
-Header: X-Tenant-ID: 1
-{
-    "email": "john@example.com",
-    "password": "password123"
-}
-```
-
-### ভূমিকা-ভিত্তিক নীতি (Policies)
-
-প্রতিটি মডেলের জন্য সম্পূর্ণ নীতি রয়েছে:
-
-- **Owner**: সম্পূর্ণ CRUD + মুছার অনুমতি
-- **Staff**: পড়া এবং তৈরি অনুমতি (সীমিত আপডেট)
-
-**কোড উদাহরণ** (`app/Policies/ProductPolicy.php`):
-```php
-public function create(User $user): bool
-{
-    return $user->isOwner();  // শুধু মালিক তৈরি করতে পারে
-}
-
-public function update(User $user, Product $product): bool
-{
-    return $user->tenant_id === $product->tenant_id && $user->isOwner();
-}
-```
-
----
-
-## 📦 ইনস্টলেশন এবং সেটআপ
-
-### প্রয়োজনীয়তা
-- PHP 8.2 বা উচ্চতর
-- Composer
-- MySQL 5.7 বা উচ্চতর
-
-### ধাপ 1: ডিপেন্ডেন্সি ইনস্টল করুন
-
-```bash
-cd "/path/to/Mini Saas post"
 composer install
 ```
 
-### ধাপ 2: পরিবেশ কনফিগারেশন
+This command installs all PHP dependencies required by Laravel.
+
+---
+
+### Step 3: Create Environment File
 
 ```bash
-# .env ফাইল তৈরি করুন
 cp .env.example .env
-
-# অ্যাপ্লিকেশন কী তৈরি করুন
-php artisan key:generate
-
-# Sanctum মাইগ্রেশন প্রকাশ করুন
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 ```
 
-### ধাপ 3: .env কনফিগার করুন
+Or manually create a `.env` file in the root directory.
+
+---
+
+### Step 4: Configure Database
+
+Edit your `.env` file with your database credentials:
 
 ```env
 DB_CONNECTION=mysql
@@ -228,402 +56,330 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=mini_saas_pos
 DB_USERNAME=root
-DB_PASSWORD=
-
-SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,localhost:8000
+DB_PASSWORD=0k
 ```
 
-### ধাপ 4: ডাটাবেস মাইগ্রেশন এবং সিডিং
+**Or create database manually:**
 
 ```bash
-# ডাটাবেস তৈরি করুন
-mysql -u root -e "CREATE DATABASE mini_saas_pos;"
-
-# মাইগ্রেশন চালান এবং সিড করুন
-php artisan migrate:fresh --seed
-
-# আউটপুট:
-# ✓ 2 টেন্যান্ট তৈরি
-# ✓ 15টি পণ্য প্রতি টেন্যান্ট
-# ✓ 10 গ্রাহক প্রতি টেন্যান্ট
-# ✓ 50+ অর্ডার সহ নমুনা ডেটা
+mysql -u root -p
+CREATE DATABASE mini_saas_pos;
+EXIT;
 ```
 
-### ধাপ 5: অ্যাপ্লিকেশন চালান
+---
+
+### Step 5: Generate Application Key
+
+```bash
+php artisan key:generate
+```
+
+This creates a unique encryption key for your application.
+
+---
+
+### Step 6: Run Database Migrations
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+This command:
+- Creates all database tables
+- Seeds sample data (optional)
+
+---
+
+### Step 7: Create Storage Link (Optional)
+
+```bash
+php artisan storage:link
+```
+
+---
+
+### Step 8: Start Development Server
 
 ```bash
 php artisan serve
-# অ্যাপ্লিকেশন চলছে http://localhost:8000
+```
+
+The application will be available at: **http://localhost:8000**
+
+---
+
+## Verification
+
+### Check if installation was successful:
+
+1. Open your browser
+2. Go to `http://localhost:8000`
+3. You should see the API documentation or welcome page
+
+### Test API:
+
+```bash
+curl -X GET http://localhost:8000/api/products
 ```
 
 ---
 
-## 🔌 API এন্ডপয়েন্ট
+## First Time Setup
 
-### প্রমাণীকরণ
+### 1. Register a New Shop
 
-```bash
-POST /api/auth/register          # নতুন টেন্যান্ট তৈরি করুন
-POST /api/auth/login             # লগইন করুন
-POST /api/auth/logout            # লগআউট করুন (অনুমোদিত)
-GET  /api/auth/me                # বর্তমান ব্যবহারকারী পান (অনুমোদিত)
+**Endpoint:** `POST /api/auth/register`
+
+**Request:**
+```json
+{
+  "tenant_name": "Your Shop Name",
+  "tenant_slug": "your-shop-slug",
+  "tenant_email": "shop@example.com",
+  "name": "Your Name",
+  "email": "your@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
 ```
 
-### পণ্য ম্যানেজমেন্ট
-
-```bash
-GET    /api/products             # সমস্ত পণ্য তালিকা (অনুমোদিত)
-POST   /api/products             # নতুন পণ্য তৈরি করুন (Owner only)
-GET    /api/products/{id}        # নির্দিষ্ট পণ্য পান (অনুমোদিত)
-PUT    /api/products/{id}        # পণ্য আপডেট করুন (Owner only)
-DELETE /api/products/{id}        # পণ্য মুছুন (Owner only)
-
-# Query প্যারামিটার:
-?search=নাম                      # নাম দ্বারা অনুসন্ধান করুন
-?low_stock=1                     # শুধুমাত্র কম স্টক পণ্য
-?sort_by=created_at              # সর্টিং ফিল্ড
-?sort_order=desc                 # asc বা desc
-?per_page=15                     # প্রতি পৃষ্ঠায় আইটেম
-```
-
-### গ্রাহক ম্যানেজমেন্ট
-
-```bash
-GET    /api/customers            # সমস্ত গ্রাহক (অনুমোদিত)
-POST   /api/customers            # নতুন গ্রাহক তৈরি করুন (অনুমোদিত)
-GET    /api/customers/{id}       # নির্দিষ্ট গ্রাহক (অনুমোদিত)
-PUT    /api/customers/{id}       # গ্রাহক আপডেট করুন (অনুমোদিত)
-DELETE /api/customers/{id}       # গ্রাহক মুছুন (Owner only)
-```
-
-### অর্ডার ম্যানেজমেন্ট
-
-```bash
-GET    /api/orders               # সমস্ত অর্ডার (অনুমোদিত)
-POST   /api/orders               # নতুন অর্ডার তৈরি করুন (অনুমোদিত)
-GET    /api/orders/{id}          # নির্দিষ্ট অর্ডার (অনুমোদিত)
-POST   /api/orders/{id}/mark-as-paid   # অর্ডার পেমেন্ট নিশ্চিত করুন
-POST   /api/orders/{id}/cancel         # অর্ডার বাতিল করুন
-
-# Query প্যারামিটার:
-?status=paid                     # স্থিতি দ্বারা ফিল্টার (pending|paid|cancelled)
-?customer_id=1                   # গ্রাহক দ্বারা ফিল্টার
-```
-
-### রিপোর্টিং
-
-```bash
-GET /api/reports/daily-sales     # দৈনিক বিক্রয় সারাংশ
-GET /api/reports/top-selling-products  # শীর্ষ 5 বিক্রয় পণ্য
-GET /api/reports/low-stock       # কম স্টক রিপোর্ট
-
-# Query প্যারামিটার:
-?date=2026-01-06                 # দৈনিক বিক্রয়ের জন্য তারিখ
-?start_date=2026-01-01           # শীর্ষ পণ্যের জন্য শুরু তারিখ
-?end_date=2026-01-31             # শীর্ষ পণ্যের জন্য শেষ তারিখ
-```
-
----
-
-## 📨 API উদাহরণ
-
-### উদাহরণ 1: নতুন টেন্যান্ট রেজিস্ট্রেশন
-
+**Using Curl:**
 ```bash
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "tenant_name": "TechStore",
-    "tenant_slug": "techstore",
-    "tenant_email": "info@techstore.com",
-    "name": "Ahmed Khan",
-    "email": "ahmed@techstore.com",
-    "password": "SecurePass123",
-    "password_confirmation": "SecurePass123"
+    "tenant_name": "Rohim Shop",
+    "tenant_slug": "rohim-shop",
+    "tenant_email": "rohim@shop.com",
+    "name": "Mohammad Rohim",
+    "email": "rohim@gmail.com",
+    "password": "password123",
+    "password_confirmation": "password123"
   }'
 ```
 
-**প্রতিক্রিয়া:**
+---
+
+### 2. Login and Get Token
+
+**Endpoint:** `POST /api/auth/login`
+
+**Request:**
 ```json
 {
-  "message": "Registration successful",
+  "email": "your@example.com",
+  "password": "password123"
+}
+```
+
+**Using Curl:**
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "rohim@gmail.com",
+    "password": "password123"
+  }'
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "token": "1|AbCdEfGhIjKlMnOpQrStUvWxYz...",
   "user": {
     "id": 1,
-    "name": "Ahmed Khan",
-    "email": "ahmed@techstore.com",
-    "role": "owner",
+    "name": "Mohammad Rohim",
+    "email": "rohim@gmail.com",
     "tenant_id": 1
-  },
-  "token": "1|abcdef123456xyz"
+  }
 }
 ```
 
-### উদাহরণ 2: পণ্য তৈরি করুন
+**Save this token** - You'll need it for all API requests.
 
+---
+
+## Common Issues and Solutions
+
+### Issue: "SQLSTATE[HY000]: General error: 1030"
+
+**Solution:**
 ```bash
-curl -X POST http://localhost:8000/api/products \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: 1" \
-  -d '{
-    "name": "Laptop Dell",
-    "sku": "LAPTOP-DELL-001",
-    "price": 85000,
-    "stock_quantity": 50,
-    "low_stock_threshold": 10,
-    "description": "Powerful laptop for professionals"
-  }'
+php artisan migrate:fresh --seed
 ```
 
-### উদাহরণ 3: অর্ডার তৈরি করুন (স্বয়ংক্রিয় স্টক ডেডাকশন)
+---
 
+### Issue: "Composer not found"
+
+**Solution:** Install Composer from https://getcomposer.org
+
+---
+
+### Issue: "PHP version too low"
+
+**Solution:** Upgrade PHP to version 8.0 or higher
+
+---
+
+### Issue: "Port 8000 already in use"
+
+**Solution:**
 ```bash
-curl -X POST http://localhost:8000/api/orders \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: 1" \
-  -d '{
-    "customer_id": 1,
-    "items": [
-      {
-        "product_id": 5,
-        "quantity": 2
-      },
-      {
-        "product_id": 8,
-        "quantity": 1
-      }
-    ]
-  }'
-```
-
-**প্রক্রিয়া:**
-1. গ্রাহক বৈধতা চেক করুন
-2. প্রতিটি পণ্যের স্টক পরীক্ষা করুন
-3. যদি পর্যাপ্ত হয় তবে **ট্রানজ্যাকশনে** স্টক কমান
-4. অর্ডার এবং OrderItems তৈরি করুন
-
----
-
-## 🗃️ পারফরম্যান্স অপটিমাইজেশন
-
-### ডাটাবেস ইন্ডেক্সিং
-
-```sql
--- products টেবিলে সূচক
-tenant_id
-(tenant_id, sku)          -- Unique composite
-(tenant_id, stock_quantity)
-
--- orders টেবিলে সূচক
-tenant_id
-customer_id
-(tenant_id, status)
-(tenant_id, created_at)
-
--- customers টেবিলে সূচক
-tenant_id
-(tenant_id, email)
-```
-
-### Eager Loading (N+1 সমস্যা সমাধান)
-
-**আগে (N+1 সমস্যা):**
-```php
-$orders = Order::all();  // 1 query
-foreach ($orders as $order) {
-    echo $order->customer->name;  // N queries
-}
-// মোট: N+1 queries
-```
-
-**এখন (অপ্টিমাইজড):**
-```php
-$orders = Order::with('customer', 'items.product')->get();  // 1 query with joins
-foreach ($orders as $order) {
-    echo $order->customer->name;  // No additional queries
-}
-```
-
-### কোয়েরি অপটিমাইজেশন উদাহরণ
-
-**রিপোর্টিং কোয়েরি:**
-```php
-// Top selling products - সিঙ্গেল অপ্টিমাইজড কোয়েরি
-$topProducts = OrderItem::query()
-    ->join('orders', 'order_items.order_id', '=', 'orders.id')
-    ->join('products', 'order_items.product_id', '=', 'products.id')
-    ->where('orders.tenant_id', $tenantId)
-    ->where('orders.status', 'paid')
-    ->whereBetween('orders.created_at', [$start, $end])
-    ->select('products.id', 'products.name')
-    ->selectRaw('COUNT(*) as quantity_sold, SUM(order_items.subtotal) as revenue')
-    ->groupBy('products.id', 'products.name')
-    ->orderByDesc('quantity_sold')
-    ->limit(5)
-    ->get();
-// এক একক aggregated কোয়েরি - সহজ এবং দ্রুত!
+php artisan serve --port=8001
 ```
 
 ---
 
-## 🔐 অর্ডার ট্রানজ্যাকশন ফ্লো
+### Issue: "Database connection error"
 
-```php
-DB::transaction(function () {
-    // Step 1: স্টক পরীক্ষা এবং বৈধতা
-    foreach ($items as $item) {
-        $product = Product::find($item->product_id);
-        if ($product->stock_quantity < $item->quantity) {
-            throw new Exception('Insufficient stock');
-        }
-    }
-    
-    // Step 2: স্টক কমান (Atomic)
-    foreach ($items as $item) {
-        $product->decrement('stock_quantity', $item->quantity);
-    }
-    
-    // Step 3: অর্ডার এবং আইটেম তৈরি করুন (Atomic)
-    $order = Order::create([...]);
-    foreach ($items as $item) {
-        $order->items()->create([...]);
-    }
-    
-    // যদি কোনো ত্রুটি আসে → সম্পূর্ণ rollback
-});
-```
+**Solution:**
+1. Check if MySQL is running
+2. Verify `.env` database credentials
+3. Make sure database exists
 
 ---
 
-## 📊 সিড ডেটা
-
-`php artisan migrate:fresh --seed` চালানোর পরে আপনি পাবেন:
-
-- **2 টেন্যান্ট**
-  - প্রতিটির 1 মালিক এবং 2 কর্মচারী ব্যবহারকারী
-  
-- **15 পণ্য প্রতি টেন্যান্ট**
-  - SKU, মূল্য, স্টক পরিমাণ সহ
-  - বিভিন্ন কম স্টক থ্রেশহোল্ড
-  
-- **10 গ্রাহক প্রতি টেন্যান্ট**
-  
-- **50+ অর্ডার সহ নমুনা ডেটা**
-  - বিভিন্ন স্থিতি (পেন্ডিং, পেমেন্টপ্রাপ্ত, বাতিল)
-  - প্রতিটি অর্ডারে 1-3 আইটেম
-
----
-
-## �� ডিবাগিং এবং পরীক্ষা
-
-### সাধারণ সমস্যা
-
-**সমস্যা**: `SQLSTATE[HY000]: General error: 1824`
-**সমাধান**: নিশ্চিত করুন মাইগ্রেশন অর্ডার সঠিক (টেন্যান্ট → ইউজার → পণ্য → অর্ডার)
-
-**সমস্যা**: `Unauthorized tenant access`
-**সমাধান**: নিশ্চিত করুন `X-Tenant-ID` হেডার সঠিকভাবে পাঠানো হয়েছে
-
-**সমস্যা**: `Insufficient stock error`
-**সমাধান**: পণ্য স্টক পরীক্ষা করুন এবং নিশ্চিত করুন `stock_quantity >= quantity`
-
----
-
-## 📝 ডিজাইন সিদ্ধান্ত এবং ট্রেড-অফ
-
-| সিদ্ধান্ত | কারণ | ট্রেড-অফ |
-|---------|------|---------|
-| **টেন্যান্ট স্কোপ Middleware** | ডেটা লিক প্রতিরোধ | মাইনর ওভারহেড প্রতি রিকোয়েস্ট |
-| **Eager Loading** | N+1 সমস্যা এড়ান | মেমরি ব্যবহার যদি বড় ডেটাসেট |
-| **Database Transactions** | ডেটা সামঞ্জস্য | সামান্য বিলম্ব (ms তে) |
-| **Policies over Gates** | আরো রক্ষণাবেক্ষণযোগ্য | প্রতিটি মডেলের জন্য ক্লাস তৈরি |
-| **Form Requests** | পুনঃব্যবহারযোগ্য ভ্যালিডেশন | সামান্য কোডবেস বৃদ্ধি |
-
----
-
-## 📦 ফাইল স্ট্রাকচার
+## Project Structure
 
 ```
 mini-saas-pos/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/Api/
-│   │   │   ├── AuthController.php
-│   │   │   ├── ProductController.php
-│   │   │   ├── CustomerController.php
-│   │   │   ├── OrderController.php
-│   │   │   └── ReportController.php
-│   │   ├── Middleware/
-│   │   │   └── EnsureTenantIsSet.php
-│   │   ├── Requests/
-│   │   │   ├── StoreProductRequest.php
-│   │   │   ├── UpdateProductRequest.php
-│   │   │   ├── StoreCustomerRequest.php
-│   │   │   └── StoreOrderRequest.php
-│   │   └── Resources/
-│   │       ├── ProductResource.php
-│   │       ├── CustomerResource.php
-│   │       ├── OrderResource.php
-│   │       └── OrderItemResource.php
-│   ├── Models/
-│   │   ├── Tenant.php
-│   │   ├── User.php (extended)
-│   │   ├── Product.php
-│   │   ├── Customer.php
-│   │   ├── Order.php
-│   │   ├── OrderItem.php
-│   │   └── Scopes/TenantScope.php
-│   ├── Policies/
-│   │   ├── ProductPolicy.php
-│   │   ├── CustomerPolicy.php
-│   │   └── OrderPolicy.php
-│   └── Providers/
-│       └── AppServiceProvider.php
+│   │   ├── Controllers/Api/      # API Controllers
+│   │   ├── Requests/             # Input Validation
+│   │   ├── Resources/            # API Response Format
+│   │   └── Middleware/           # Middlewares
+│   ├── Models/                   # Database Models
+│   └── Policies/                 # Authorization Logic
 ├── database/
-│   ├── migrations/
-│   │   ├── 2026_01_06_000100_create_tenants_table.php
-│   │   ├── 2026_01_06_000200_add_tenant_id_to_users_table.php
-│   │   ├── 2026_01_06_000300_create_products_table.php
-│   │   ├── 2026_01_06_000400_create_customers_table.php
-│   │   ├── 2026_01_06_000500_create_orders_table.php
-│   │   └── 2026_01_06_000600_create_order_items_table.php
-│   ├── factories/
-│   │   ├── TenantFactory.php
-│   │   ├── ProductFactory.php
-│   │   ├── CustomerFactory.php
-│   │   └── OrderFactory.php
-│   └── seeders/
-│       ├── TenantSeeder.php
-│       └── DatabaseSeeder.php
+│   ├── migrations/               # Database Schema
+│   └── seeders/                  # Sample Data
 ├── routes/
-│   └── api.php
-├── .env
-└── README.md
+│   └── api.php                   # API Routes
+├── config/
+│   ├── app.php                   # App Config
+│   └── database.php              # Database Config
+├── .env                          # Environment Variables
+├── composer.json                 # PHP Dependencies
+└── README.md                     # Documentation
 ```
 
 ---
 
-## 🚀 পরবর্তী ধাপ (ভবিষ্যতের উন্নতি)
+## Configuration
 
-- [ ] PHPUnit ফিচার টেস্ট যোগ করুন
-- [ ] Swagger/OpenAPI ডকুমেন্টেশন
-- [ ] Background Jobs for Reports (Queue)
-- [ ] Multi-language সাপোর্ট
-- [ ] Payment Gateway ইন্টিগ্রেশন
-- [ ] রিয়েল-টাইম নোটিফিকেশন (Websockets)
+### Important Files to Check:
+
+1. **`.env`** - Environment variables
+2. **`config/app.php`** - Application settings
+3. **`config/database.php`** - Database settings
+4. **`routes/api.php`** - API endpoints
 
 ---
 
-## 📞 সহায়তা
+## Database Tables Created
 
-যেকোনো সমস্যার জন্য, লগফাইলগুলি চেক করুন:
-```bash
-tail -f storage/logs/laravel.log
+- `tenants` - Shop/Business information
+- `users` - User accounts
+- `products` - Product inventory
+- `customers` - Customer information
+- `orders` - Sales orders
+- `order_items` - Order line items
+- `personal_access_tokens` - API tokens
+
+---
+
+## API Documentation
+
+### Authentication Endpoints
+```
+POST   /api/auth/register       - Register new shop
+POST   /api/auth/login          - Login user
+POST   /api/auth/logout         - Logout user
+GET    /api/auth/me             - Get current user
+```
+
+### Product Endpoints
+```
+GET    /api/products            - List all products
+POST   /api/products            - Create product
+GET    /api/products/{id}       - Get single product
+PUT    /api/products/{id}       - Update product
+DELETE /api/products/{id}       - Delete product
+```
+
+### Customer Endpoints
+```
+GET    /api/customers           - List all customers
+POST   /api/customers           - Create customer
+GET    /api/customers/{id}      - Get single customer
+PUT    /api/customers/{id}      - Update customer
+DELETE /api/customers/{id}      - Delete customer
+```
+
+### Order Endpoints
+```
+GET    /api/orders              - List all orders
+POST   /api/orders              - Create order
+GET    /api/orders/{id}         - Get single order
+PUT    /api/orders/{id}         - Update order
+DELETE /api/orders/{id}         - Delete order
+POST   /api/orders/{id}/mark-as-paid    - Mark paid
+POST   /api/orders/{id}/cancel          - Cancel order
+```
+
+### Report Endpoints
+```
+GET    /api/reports/daily-sales          - Daily sales report
+GET    /api/reports/top-selling-products - Top products
+GET    /api/reports/low-stock            - Low stock alert
 ```
 
 ---
 
-**প্রজেক্ট তৈরি:** January 2026  
-**স্থিতি:** প্রোডাকশন-রেডি ✅
+## Testing with Postman
 
+1. Download Postman from https://www.postman.com/downloads/
+2. Import the Postman Collection (if provided)
+3. Set environment variable `base_url` to `http://localhost:8000`
+4. Set `token` variable with your API token
+5. Start making API requests
+
+---
+
+## Next Steps
+
+1. ✅ Installation complete
+2. 📝 Create your first shop
+3. 📦 Add products
+4. 👥 Add customers
+5. 🛒 Create orders
+6. 📊 View reports
+
+---
+
+## Support
+
+For issues or questions:
+- Check the documentation
+- Review error messages carefully
+- Check `.env` file configuration
+- Ensure database is running
+
+---
+
+## Version Information
+
+- **Framework:** Laravel 9.x or 10.x
+- **Database:** MySQL 5.7+
+- **PHP:** 8.0+
+- **API:** RESTful API with JSON responses
+
+---
+
+**Installation Complete!** 🎉
+
+Start using the API at `http://localhost:8000`
