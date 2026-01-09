@@ -18,8 +18,8 @@ Before installing, make sure you have the following installed:
 
 **Using Git:**
 ```bash
-git clone https://github.com/yourusername/mini-saas-pos.git
-cd mini-saas-pos
+git clone https://github.com/thbappy/mini-saas-api.git
+cd mini-saas-api
 ```
 
 **Or download and extract ZIP file**
